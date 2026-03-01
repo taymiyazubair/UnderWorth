@@ -1,35 +1,12 @@
 [gd_scene format=3 uid="uid://borv45gdq11xq"]
 
-[ext_resource type="Texture2D" uid="uid://b6arm8308uq6e" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_000.png" id="1_mgtde"]
-[ext_resource type="Script" uid="uid://c7c7pxis45cdw" path="res://character_body_2d.gd" id="1_spy8m"]
 [ext_resource type="Texture2D" uid="uid://b1h2y6lvtpu6t" path="res://Assets/Sprites/Background/background.png" id="2_mgtde"]
 [ext_resource type="Script" uid="uid://bnew3ilvlbth6" path="res://background.gd" id="4_w7yd3"]
-
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_w7yd3"]
-radius = 80.0
-height = 166.0
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_spy8m"]
 distance = -18.5
 
 [node name="Node2D" type="Node2D" unique_id=434814895]
-
-[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=404553576]
-script = ExtResource("1_spy8m")
-invert = -1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=333447288]
-z_index = 2
-position = Vector2(126, 152)
-shape = SubResource("CapsuleShape2D_w7yd3")
-
-[node name="Wraith03Idle000" type="Sprite2D" parent="CharacterBody2D" unique_id=1470986131]
-z_index = 1
-position = Vector2(129, 134.00003)
-rotation = 3.1415927
-scale = Vector2(0.60769236, 0.60952383)
-texture = ExtResource("1_mgtde")
-flip_h = true
 
 [node name="Background" type="Sprite2D" parent="." unique_id=1463498373]
 position = Vector2(572.99994, 333)
