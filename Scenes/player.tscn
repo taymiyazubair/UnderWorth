@@ -36,7 +36,7 @@ const MAX_CORRUPTION: float = 1.0
 func _ready() -> void:
 	add_to_group(\"player\")
 	position = Vector2(200, 430)
-	sprite.play(\"idle\")
+	#sprite.play(\"idle\")
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -75,12 +75,12 @@ func _input(event: InputEvent) -> void:
 		return
 
 	# ── Jump ──
-	if event.is_action_pressed(\"jump\") and jumps_left > 0:
+	if event.is_action_pressed(\"Jump\") and jumps_left > 0:
 		velocity.y = JUMP_FORCE if current_layer == \"surface\" else -JUMP_FORCE
 		jumps_left -= 1
 
 	# ── Layer Shift ──
-	if event.is_action_pressed(\"shift_layer\"):
+	if event.is_action_pressed(\"Shift_Layer\"):
 		current_layer = \"beneath\" if current_layer == \"surface\" else \"surface\"
 		corruption = 0.0    # Reset corruption on switch
 		velocity.y = 0

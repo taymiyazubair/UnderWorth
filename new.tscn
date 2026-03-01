@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://b6arm8308uq6e" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_000.png" id="1_mgtde"]
 [ext_resource type="Script" uid="uid://c7c7pxis45cdw" path="res://character_body_2d.gd" id="1_spy8m"]
 [ext_resource type="Texture2D" uid="uid://b1h2y6lvtpu6t" path="res://Assets/Sprites/Background/background.png" id="2_mgtde"]
+[ext_resource type="Script" uid="uid://bnew3ilvlbth6" path="res://background.gd" id="4_w7yd3"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_w7yd3"]
 radius = 80.0
@@ -35,6 +36,7 @@ position = Vector2(572.99994, 333)
 rotation = 3.1415927
 scale = Vector2(0.598063, 0.6077849)
 texture = ExtResource("2_mgtde")
+script = ExtResource("4_w7yd3")
 metadata/_edit_lock_ = true
 
 [node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1686029342]
@@ -42,3 +44,6 @@ metadata/_edit_lock_ = true
 [node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=865985175]
 position = Vector2(0, 27.5)
 shape = SubResource("WorldBoundaryShape2D_spy8m")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1786196956]
+offset = Vector2(572, 323)
