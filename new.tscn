@@ -1,15 +1,21 @@
 [gd_scene format=3 uid="uid://borv45gdq11xq"]
 
 [ext_resource type="Texture2D" uid="uid://b6arm8308uq6e" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_000.png" id="1_mgtde"]
+[ext_resource type="Script" uid="uid://c7c7pxis45cdw" path="res://character_body_2d.gd" id="1_spy8m"]
 [ext_resource type="Texture2D" uid="uid://b1h2y6lvtpu6t" path="res://Assets/Sprites/Background/background.png" id="2_mgtde"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_w7yd3"]
 radius = 80.0
 height = 166.0
 
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_spy8m"]
+distance = -18.5
+
 [node name="Node2D" type="Node2D" unique_id=434814895]
 
 [node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=404553576]
+script = ExtResource("1_spy8m")
+invert = -1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=333447288]
 z_index = 2
@@ -30,3 +36,9 @@ rotation = 3.1415927
 scale = Vector2(0.598063, 0.6077849)
 texture = ExtResource("2_mgtde")
 metadata/_edit_lock_ = true
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1686029342]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=865985175]
+position = Vector2(0, 27.5)
+shape = SubResource("WorldBoundaryShape2D_spy8m")
