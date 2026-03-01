@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://diho5ifvlsygq"]
+
+[ext_resource type="Texture2D" uid="uid://bc4suus1frsyf" path="res://Assets/Sprites/Background/1/background.png" id="1_k5f4k"]
+[ext_resource type="PackedScene" uid="uid://dhe7avk28tmi6" path="res://Scenes/Player.tscn" id="2_6phgx"]
+[ext_resource type="Texture2D" uid="uid://b1h2y6lvtpu6t" path="res://Assets/Sprites/Background/background.png" id="2_81xng"]
+
+[sub_resource type="GDScript" id="GDScript_6phgx"]
+resource_name = "Level"
+script/source = "extends Node2D
+
+@onready var bg_surface: TextureRect = $CanvasLayer/BGSurface
+@onready var bg_beneath: TextureRect = $CanvasLayer/BGBeneath
+
+func switch_to_beneath() -> void:
+	bg_surface.visible = false
+	bg_beneath.visible = true
+
+func switch_to_surface() -> void:
+	bg_surface.visible = true
+	bg_beneath.visible = false
+"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_k5f4k"]
+size = Vector2(5877.75, 133)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wqkje"]
+size = Vector2(1200, 20)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_0f350"]
+size = Vector2(1200, 20)
+
+[sub_resource type="GDScript" id="GDScript_8c0lf"]
+resource_name = "ObstacleSpawner"
+script/source = "extends Node2D
+
+var scroll_speed: float = 300.0
+var spawn_timer: float = 0.0
+var spawn_interval: float = 2.2
+var difficulty_timer: float = 0.0
+var obstacles: Array = []
+
+# ── Assign these in the Inspector ──
+@export var spike_texture: Texture2D        # drag your spike PNG here
+@export var cart_texture: Texture2D         # drag your
+"
+
+[node name="Level" type="Node2D" unique_id=1281876606]
+position = Vector2(18, 12)
+script = SubResource("GDScript_6phgx")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1355951812]
+layer = -1
+
+[node name="BGBeneath" type="TextureRect" parent="CanvasLayer" unique_id=954723146]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -353.0
+offset_top = -269.0
+offset_right = 415.0
+offset_bottom = 163.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.72697735, 0.88047254)
+texture = ExtResource("2_81xng")
+
+[node name="Background1" type="Sprite2D" parent="CanvasLayer" unique_id=5049566]
+position = Vector2(579.5, 330.99997)
+scale = Vector2(0.741735, 0.7197706)
+texture = ExtResource("1_k5f4k")
+
+[node name="Floor" type="StaticBody2D" parent="." unique_id=1695768600]
+position = Vector2(5000, 500)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor" unique_id=535464086]
+position = Vector2(-2071, 108)
+shape = SubResource("RectangleShape2D_k5f4k")
+
+[node name="Player" parent="." unique_id=197429011 instance=ExtResource("2_6phgx")]
+position = Vector2(386, 666)
+
+[node name="Camera2D" type="Camera2D" parent="Player" unique_id=757025780]
+position = Vector2(376, 144)
+limit_left = 0
+position_smoothing_enabled = true
+
+[node name="SurfaceFloor" type="StaticBody2D" parent="." unique_id=1959837128]
+position = Vector2(600, 495)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SurfaceFloor" unique_id=1173936777]
+position = Vector2(7, 0)
+shape = SubResource("RectangleShape2D_wqkje")
+
+[node name="BeneathCeiling" type="StaticBody2D" parent="." unique_id=1981261115]
+position = Vector2(600, 495)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BeneathCeiling" unique_id=2114919943]
+shape = SubResource("RectangleShape2D_0f350")
+
+[node name="ObstacleSpawner" type="Node2D" parent="." unique_id=1453272298]
+position = Vector2(-19, -3)
+script = SubResource("GDScript_8c0lf")

@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://ci2djaeeingpa"]
+
+[ext_resource type="Texture2D" uid="uid://cf5xkv6meybtc" path="res://Assets/Sprites/Crystals/13.png" id="1_c61q8"]
+
+[sub_resource type="GDScript" id="GDScript_vacj6"]
+resource_name = "Sprite"
+script/source = "extends Area2D
+
+@export var layer_type: String = \"surface\"  # \"surface\" or \"beneath\"
+var collected: bool = false
+
+func _ready() -> void:
+	connect(\"body_entered\", _on_body_entered)
+	# Visual tint: gold for surface, teal for beneath
+	$Sprite.modulate = Color(1.0, 0.85, 0.1) if layer_type == \"surface\" else Color(0.3, 1.0, 0.8)
+
+func _on_body_entered(body: Node) -> void:
+	if collected:
+		return
+	if body.is_in_group(\"player\") and body.current_layer == layer_type:
+		collected = true
+		var level = get_parent().get_parent()
+		if level and level.has_method(\"add_score\"):
+			level.add_score(1)
+		queue_free()
+"
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_mfrgv"]
+radius = 49.010204
+
+[node name="Crystal" type="Area2D" unique_id=797267977]
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=680972915]
+position = Vector2(-5.687505, -1.8125029)
+scale = Vector2(0.3153646, 0.28671876)
+texture = ExtResource("1_c61q8")
+script = SubResource("GDScript_vacj6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2034929377]
+shape = SubResource("CircleShape2D_mfrgv")

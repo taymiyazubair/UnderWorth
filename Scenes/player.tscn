@@ -1,0 +1,161 @@
+[gd_scene format=3 uid="uid://dhe7avk28tmi6"]
+
+[ext_resource type="Texture2D" uid="uid://b6arm8308uq6e" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_000.png" id="1_pu2lt"]
+[ext_resource type="Texture2D" uid="uid://dp2apnlyqdtjo" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_001.png" id="2_ukyrk"]
+[ext_resource type="Texture2D" uid="uid://dv4ffhmb5xokh" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_002.png" id="3_7dp3o"]
+[ext_resource type="Texture2D" uid="uid://c005iew40dkyx" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_003.png" id="4_h4iuc"]
+[ext_resource type="Texture2D" uid="uid://dijdhwlvhfxgt" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_004.png" id="5_fd4e3"]
+[ext_resource type="Texture2D" uid="uid://cgfkkic8kg8v7" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_005.png" id="6_qqcod"]
+[ext_resource type="Texture2D" uid="uid://dugl7vftwuvnr" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_006.png" id="7_igrcy"]
+[ext_resource type="Texture2D" uid="uid://bumdiub1b1pqf" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_007.png" id="8_fs7ks"]
+[ext_resource type="Texture2D" uid="uid://bkg71tcsuxerb" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_008.png" id="9_l6n3p"]
+[ext_resource type="Texture2D" uid="uid://d1sgwy2055xy6" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_009.png" id="10_olqyp"]
+[ext_resource type="Texture2D" uid="uid://vemul7i6x35e" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_010.png" id="11_wpjfl"]
+[ext_resource type="Texture2D" uid="uid://b4ri5erp4enes" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_011.png" id="12_bi64h"]
+
+[sub_resource type="GDScript" id="GDScript_ivps1"]
+script/source = "extends CharacterBody2D
+
+# ── Constants ──────────────────────────────────────────
+const GRAVITY: float = 980.0
+const JUMP_FORCE: float = -450.0
+const MAX_JUMPS: int = 2
+
+# ── State ──────────────────────────────────────────────
+var jumps_left: int = MAX_JUMPS
+var is_dead: bool = false
+var current_layer: String = \"surface\"  # \"surface\" or \"beneath\"
+
+# ── Corruption ─────────────────────────────────────────
+var corruption: float = 0.0
+const CORRUPTION_RATE: float = 1.0 / 7.0   # Full corruption in 7 seconds
+const MAX_CORRUPTION: float = 1.0
+
+@onready var sprite: AnimatedSprite2D = $Character
+
+func _ready() -> void:
+	add_to_group(\"player\")
+	position = Vector2(200, 430)
+	sprite.play(\"idle\")
+
+func _physics_process(delta: float) -> void:
+	if is_dead:
+		return
+
+	# ── Gravity (flips in beneath) ──
+	if current_layer == \"surface\":
+		velocity.y += GRAVITY * delta
+		if position.y >= 475:
+			position.y = 475
+			velocity.y = 0
+			jumps_left = MAX_JUMPS
+	else:
+		velocity.y -= GRAVITY * delta
+		if position.y <= 125:
+			position.y = 125
+			velocity.y = 0
+			jumps_left = MAX_JUMPS
+
+	# Player stays fixed horizontally — world scrolls instead
+	velocity.x = 0
+	move_and_slide()
+
+	# ── Corruption timer ──
+	corruption += CORRUPTION_RATE * delta
+	if corruption >= MAX_CORRUPTION:
+		die()
+
+	# ── Update corruption overlay ──
+	var level = get_parent()
+	if level and level.has_method(\"update_corruption\"):
+		level.update_corruption(corruption, current_layer)
+
+func _input(event: InputEvent) -> void:
+	if is_dead:
+		return
+
+	# ── Jump ──
+	if event.is_action_pressed(\"jump\") and jumps_left > 0:
+		velocity.y = JUMP_FORCE if current_layer == \"surface\" else -JUMP_FORCE
+		jumps_left -= 1
+
+	# ── Layer Shift ──
+	if event.is_action_pressed(\"shift_layer\"):
+		current_layer = \"beneath\" if current_layer == \"surface\" else \"surface\"
+		corruption = 0.0    # Reset corruption on switch
+		velocity.y = 0
+		jumps_left = MAX_JUMPS
+		var level = get_parent()
+		if level and level.has_method(\"switch_layer\"):
+			level.switch_layer(current_layer)
+
+func die() -> void:
+	if is_dead:
+		return
+	is_dead = true
+	velocity = Vector2.ZERO
+	var level = get_parent()
+	if level and level.has_method(\"show_game_over\"):
+		level.show_game_over()
+"
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_gt76g"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_pu2lt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_ukyrk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_7dp3o")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_h4iuc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_fd4e3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_qqcod")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_igrcy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_fs7ks")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_l6n3p")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_olqyp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_wpjfl")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_bi64h")
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pu2lt"]
+radius = 72.249565
+
+[node name="Player" type="CharacterBody2D" unique_id=1294129050 groups=["Player"]]
+script = SubResource("GDScript_ivps1")
+
+[node name="Character" type="AnimatedSprite2D" parent="." unique_id=943872231]
+position = Vector2(116.99999, 436.00006)
+scale = Vector2(0.569, 0.394)
+sprite_frames = SubResource("SpriteFrames_gt76g")
+autoplay = "default"
+frame_progress = 0.89479244
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=15674143]
+position = Vector2(106, 419)
+shape = SubResource("CircleShape2D_pu2lt")
