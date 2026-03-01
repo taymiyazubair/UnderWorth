@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://djoo7krcv87tl"]
+
+[ext_resource type="Texture2D" uid="uid://b6arm8308uq6e" path="res://Assets/Sprites/Characters/1/Idle/Wraith_03_Idle_000.png" id="1_mgtde"]
+[ext_resource type="Texture2D" uid="uid://bc4suus1frsyf" path="res://Assets/Sprites/Background/1/background.png" id="2_spy8m"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_w7yd3"]
+radius = 110.0
+height = 322.0
+
+[node name="Node2D" type="Node2D" unique_id=434814895]
+
+[node name="CharacterBody2D" type="CharacterBody2D" parent="." unique_id=404553576]
+
+[node name="Wraith03Idle000" type="Sprite2D" parent="CharacterBody2D" unique_id=1470986131]
+z_index = 1
+position = Vector2(-2, -7)
+texture = ExtResource("1_mgtde")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CharacterBody2D" unique_id=333447288]
+shape = SubResource("CapsuleShape2D_w7yd3")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=2101560003]
+position = Vector2(-2, 6)
+texture = ExtResource("2_spy8m")
