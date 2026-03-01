@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://diho5ifvlsygq"]
 
 [ext_resource type="Texture2D" uid="uid://bc4suus1frsyf" path="res://Assets/Sprites/Background/1/background.png" id="1_k5f4k"]
-[ext_resource type="PackedScene" uid="uid://dhe7avk28tmi6" path="res://Scenes/Player.tscn" id="2_6phgx"]
+[ext_resource type="PackedScene" uid="uid://dhe7avk28tmi6" path="res://Scenes/player.tscn" id="2_6phgx"]
 [ext_resource type="Texture2D" uid="uid://b1h2y6lvtpu6t" path="res://Assets/Sprites/Background/background.png" id="2_81xng"]
 
 [sub_resource type="GDScript" id="GDScript_6phgx"]
@@ -55,17 +55,18 @@ layer = -1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -353.0
-offset_top = -269.0
-offset_right = 415.0
-offset_bottom = 163.0
+offset_left = 793.0
+offset_top = 608.0
+offset_right = 1561.0
+offset_bottom = 1040.0
 grow_horizontal = 2
 grow_vertical = 2
+rotation = 3.1415927
 scale = Vector2(0.72697735, 0.88047254)
 texture = ExtResource("2_81xng")
 
 [node name="Background1" type="Sprite2D" parent="CanvasLayer" unique_id=5049566]
-position = Vector2(579.5, 330.99997)
+position = Vector2(1604, 83.00001)
 scale = Vector2(0.741735, 0.7197706)
 texture = ExtResource("1_k5f4k")
 
