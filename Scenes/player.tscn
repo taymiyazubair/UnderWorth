@@ -15,79 +15,95 @@
 
 [sub_resource type="GDScript" id="GDScript_ivps1"]
 script/source = "extends CharacterBody2D
+# ════════════════════════════════════════════
+#  Player.gd  —  Fixed position, world scrolls
+# ════════════════════════════════════════════
 
-# ── Constants ──────────────────────────────────────────
-const GRAVITY: float = 980.0
-const JUMP_FORCE: float = -450.0
-const MAX_JUMPS: int = 2
+const GRAVITY        : float = 900.0
+const JUMP_FORCE     : float = -460.0
+const MAX_JUMPS      : int   = 2
+const FIXED_X        : float = 200.0   # Player stays locked here forever
 
-# ── State ──────────────────────────────────────────────
-var jumps_left: int = MAX_JUMPS
-var is_dead: bool = false
-var current_layer: String = \"surface\"  # \"surface\" or \"beneath\"
+var jumps_left    : int    = MAX_JUMPS
+var is_dead       : bool   = false
+var current_layer : String = \"surface\"   # \"surface\" or \"beneath\"
+var corruption    : float  = 0.0
+const CORRUPTION_RATE : float = 1.0 / 7.0
 
-# ── Corruption ─────────────────────────────────────────
-var corruption: float = 0.0
-const CORRUPTION_RATE: float = 1.0 / 7.0   # Full corruption in 7 seconds
-const MAX_CORRUPTION: float = 1.0
-
-@onready var sprite: AnimatedSprite2D = $Character
+@onready var sprite : AnimatedSprite2D = $Character
 
 func _ready() -> void:
 	add_to_group(\"player\")
-	position = Vector2(200, 430)
-	#sprite.play(\"idle\")
+	position = Vector2(FIXED_X, 390)
+	sprite.play(\"idle\")
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
-	# ── Gravity (flips in beneath) ──
+	# ── Lock player to fixed X — world scrolls, not the player ──
+	position.x = FIXED_X
+
+	# ── Gravity direction depends on layer ──
 	if current_layer == \"surface\":
 		velocity.y += GRAVITY * delta
-		if position.y >= 475:
-			position.y = 475
-			velocity.y = 0
-			jumps_left = MAX_JUMPS
+		velocity.y = min(velocity.y, 800.0)   # Cap fall speed
 	else:
 		velocity.y -= GRAVITY * delta
-		if position.y <= 125:
-			position.y = 125
-			velocity.y = 0
-			jumps_left = MAX_JUMPS
+		velocity.y = max(velocity.y, -800.0)  # Cap rise speed
 
-	# Player stays fixed horizontally — world scrolls instead
-	velocity.x = 0
+	velocity.x = 0.0
 	move_and_slide()
+
+	# ── Reset jumps when touching floor or ceiling ──
+	if current_layer == \"surface\" and is_on_floor():
+		jumps_left = MAX_JUMPS
+	if current_layer == \"beneath\" and is_on_ceiling():
+		jumps_left = MAX_JUMPS
+
+	# ── Hard boundary fallback (if no collision shape) ──
+	if current_layer == \"surface\" and position.y > 490:
+		position.y = 490
+		velocity.y = 0.0
+		jumps_left = MAX_JUMPS
+	elif current_layer == \"beneath\" and position.y < 110:
+		position.y = 110
+		velocity.y = 0.0
+		jumps_left = MAX_JUMPS
 
 	# ── Corruption timer ──
 	corruption += CORRUPTION_RATE * delta
-	if corruption >= MAX_CORRUPTION:
+	_update_corruption_ui()
+	if corruption >= 1.0:
 		die()
-
-	# ── Update corruption overlay ──
-	var level = get_parent()
-	if level and level.has_method(\"update_corruption\"):
-		level.update_corruption(corruption, current_layer)
 
 func _input(event: InputEvent) -> void:
 	if is_dead:
 		return
 
-	# ── Jump ──
-	if event.is_action_pressed(\"Jump\") and jumps_left > 0:
-		velocity.y = JUMP_FORCE if current_layer == \"surface\" else -JUMP_FORCE
-		jumps_left -= 1
+	# ── JUMP (Space or Up Arrow) ──
+	if event.is_action_pressed(\"jump\"):
+		if jumps_left > 0:
+			velocity.y = JUMP_FORCE if current_layer == \"surface\" else -JUMP_FORCE
+			jumps_left -= 1
 
-	# ── Layer Shift ──
-	if event.is_action_pressed(\"Shift_Layer\"):
-		current_layer = \"beneath\" if current_layer == \"surface\" else \"surface\"
-		corruption = 0.0    # Reset corruption on switch
-		velocity.y = 0
-		jumps_left = MAX_JUMPS
-		var level = get_parent()
-		if level and level.has_method(\"switch_layer\"):
-			level.switch_layer(current_layer)
+	# ── LAYER SHIFT (S key) ──
+	if event.is_action_pressed(\"shift_layer\"):
+		_switch_layer()
+
+func _switch_layer() -> void:
+	current_layer = \"beneath\" if current_layer == \"surface\" else \"surface\"
+	corruption    = 0.0       # Switching resets corruption
+	velocity.y    = 0.0
+	jumps_left    = MAX_JUMPS
+	var level = get_parent()
+	if level and level.has_method(\"switch_layer\"):
+		level.switch_layer(current_layer)
+
+func _update_corruption_ui() -> void:
+	var level = get_parent()
+	if level and level.has_method(\"update_corruption\"):
+		level.update_corruption(corruption, current_layer)
 
 func die() -> void:
 	if is_dead:
@@ -97,6 +113,15 @@ func die() -> void:
 	var level = get_parent()
 	if level and level.has_method(\"show_game_over\"):
 		level.show_game_over()
+
+func reset() -> void:
+	is_dead       = false
+	current_layer = \"surface\"
+	corruption    = 0.0
+	velocity      = Vector2.ZERO
+	position      = Vector2(FIXED_X, 390)
+	jumps_left    = MAX_JUMPS
+	sprite.play(\"idle\")
 "
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_gt76g"]

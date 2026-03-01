@@ -7,17 +7,140 @@
 [sub_resource type="GDScript" id="GDScript_6phgx"]
 resource_name = "Level"
 script/source = "extends Node2D
+# ════════════════════════════════════════════════════════
+#  Level.gd — Master controller
+#  Handles: layer switch, score, corruption UI, game over
+#  Tile collision (static) is handled by TileMapLayer physics
+#  Crystal collection is handled by _check_crystals() below
+# ════════════════════════════════════════════════════════
 
-@onready var bg_surface: Sprite2D = $CanvasLayer/Background1
-@onready var bg_beneath: TextureRect = $CanvasLayer/BGBeneath
+var score : int = 0
 
-func switch_to_beneath() -> void:
-	bg_surface.visible = false
-	bg_beneath.visible = true
+@onready var bg_surface  : TextureRect  = $CanvasLayer/Background1
+@onready var bg_beneath  : TextureRect  = $CanvasLayer/BGBeneath
+@onready var player      : CharacterBody2D = $Player
+@onready var surface_spawner : Node2D   = $ObstacleSpawner          # Your surface spawner
+@onready var beneath_spawner : Node2D   = $BeneathSpawner           # Add this node too!
 
-func switch_to_surface() -> void:
-	bg_surface.visible = true
-	bg_beneath.visible = false
+# UI nodes — make sure these names match your scene tree exactly
+@onready var score_label      : Label       = $UI/ScoreLabel
+@onready var corruption_bar   : ProgressBar = $UI/CorruptionBar
+@onready var layer_label      : Label       = $UI/LayerLabel
+@onready var game_over_panel  : Panel       = $UI/GameOverPanel
+@onready var final_score_label: Label       = $UI/GameOverPanel/VBoxContainer/FinalScore
+@onready var restart_btn      : Button      = $UI/GameOverPanel/VBoxContainer/RestartBtn
+
+func _ready() -> void:
+	restart_btn.connect(\"pressed\", _on_restart)
+	game_over_panel.visible = false
+	# Start both spawners
+	surface_spawner.start()
+	beneath_spawner.start()
+
+func _physics_process(_delta: float) -> void:
+	if not player.is_dead:
+		_check_crystals()
+		_check_obstacles()
+
+# ══════════════════════════════════════════════════════
+#  TILE INTERACTION — checks tiles around player each frame
+# ══════════════════════════════════════════════════════
+
+func _check_crystals() -> void:
+	# Check both spawners for crystal tiles near the player
+	_scan_spawner_for_crystals(surface_spawner, \"surface\")
+	_scan_spawner_for_crystals(beneath_spawner, \"beneath\")
+
+func _scan_spawner_for_crystals(spawner: Node2D, layer: String) -> void:
+	# Only collect crystals if player is in matching layer
+	if player.current_layer != layer:
+		return
+	for chunk in spawner.get_children():
+		if not chunk is TileMapLayer:
+			continue
+		var local_pos = chunk.to_local(player.global_position)
+		var tile_pos  = chunk.local_to_map(local_pos)
+		# Check 2x2 area around player
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				var cell = Vector2i(tile_pos.x + dx, tile_pos.y + dy)
+				var tile_data = chunk.get_cell_tile_data(cell)
+				if tile_data == null:
+					continue
+				var type = str(tile_data.get_custom_data(\"type\"))
+				if type == \"crystal\":
+					chunk.erase_cell(cell)
+					add_score(1)
+
+func _check_obstacles() -> void:
+	_scan_spawner_for_obstacles(surface_spawner, \"surface\")
+	_scan_spawner_for_obstacles(beneath_spawner, \"beneath\")
+
+func _scan_spawner_for_obstacles(spawner: Node2D, layer: String) -> void:
+	if player.current_layer != layer:
+		return
+	for chunk in spawner.get_children():
+		if not chunk is TileMapLayer:
+			continue
+		var local_pos = chunk.to_local(player.global_position)
+		var tile_pos  = chunk.local_to_map(local_pos)
+		for dx in range(-1, 2):
+			for dy in range(-1, 2):
+				var cell = Vector2i(tile_pos.x + dx, tile_pos.y + dy)
+				var tile_data = chunk.get_cell_tile_data(cell)
+				if tile_data == null:
+					continue
+				var type = str(tile_data.get_custom_data(\"type\"))
+				if type in [\"spike\", \"barrel\", \"box\"]:
+					player.die()
+					return
+
+# ══════════════════════════════════════════════════════
+#  SCORE & UI
+# ══════════════════════════════════════════════════════
+
+func add_score(amount: int) -> void:
+	score += amount
+	score_label.text = \"💎 %d\" % score
+
+func update_corruption(amount: float, layer: String) -> void:
+	corruption_bar.value = amount * 100.0
+	var overlay = get_node_or_null(\"CorruptionOverlay\")
+	if overlay == null:
+		return
+	if layer == \"surface\":
+		overlay.color = Color(1.0, 1.0, 0.4, amount * 0.55)  # bright yellow tint
+	else:
+		overlay.color = Color(0.0, 0.0, 0.0, amount * 0.70)  # dark tint
+
+func switch_layer(new_layer: String) -> void:
+	bg_surface.visible = (new_layer == \"surface\")
+	bg_beneath.visible = (new_layer == \"beneath\")
+	if new_layer == \"surface\":
+		layer_label.text     = \"⬆ SURFACE\"
+		layer_label.modulate = Color(0.4, 0.9, 1.0)
+	else:
+		layer_label.text     = \"⬇ BENEATH\"
+		layer_label.modulate = Color(0.8, 0.4, 1.0)
+
+func show_game_over() -> void:
+	surface_spawner.stop()
+	beneath_spawner.stop()
+	final_score_label.text  = \"💎  %d  crystals\" % score
+	game_over_panel.visible = true
+
+func _on_restart() -> void:
+	score = 0
+	score_label.text = \"💎 0\"
+	corruption_bar.value   = 0
+	game_over_panel.visible = false
+	var overlay = get_node_or_null(\"CorruptionOverlay\")
+	if overlay:
+		overlay.color = Color(0, 0, 0, 0)
+	switch_layer(\"surface\")
+	surface_spawner.restart()
+	beneath_spawner.restart()
+	player.reset()
 "
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k5f4k"]
