@@ -1,0 +1,110 @@
+extends CharacterBody2D
+# Player.gd
+# Player is always fixed at X=200.
+# Surface zone:     gravity DOWN, stands at Y=516
+# Underground zone: gravity UP,   stands at Y=132, sprite flipped
+
+# ── Fixed positions ────────────────────────────────────
+const FIXED_X           : float = 200.0
+const SURFACE_Y         : float = 516.0
+const UNDERGROUND_Y     : float = 132.0
+
+# ── Physics ────────────────────────────────────────────
+const GRAVITY_STRENGTH  : float = 1000.0
+const JUMP_FORCE        : float = -500.0   # negative = upward in surface
+const MAX_FALL_SPEED    : float = 900.0
+
+# ── State ──────────────────────────────────────────────
+var zone        : String = "surface"   # "surface" or "underground"
+var is_dead     : bool   = false
+var can_jump    : bool   = true        # True when touching floor/ceiling
+
+@onready var character : AnimatedSprite2D = $Character
+
+func _ready() -> void:
+    add_to_group("player")
+    position = Vector2(FIXED_X, SURFACE_Y)
+    character.play("idle")
+
+func _physics_process(delta: float) -> void:
+    if is_dead:
+        return
+
+    # ── Lock player to fixed X always ──────────────────
+    position.x = FIXED_X
+
+    # ── Apply gravity toward the floor of current zone ─
+    if zone == "surface":
+        velocity.y += GRAVITY_STRENGTH * delta
+        velocity.y  = min(velocity.y, MAX_FALL_SPEED)
+    else:
+        velocity.y -= GRAVITY_STRENGTH * delta
+        velocity.y  = max(velocity.y, -MAX_FALL_SPEED)
+
+    velocity.x = 0.0
+    move_and_slide()
+
+    # ── Snap to floor/ceiling with small tolerance ──────
+    if zone == "surface" and position.y >= SURFACE_Y:
+        position.y = SURFACE_Y
+        velocity.y = 0.0
+        can_jump   = true
+    elif zone == "underground" and position.y <= UNDERGROUND_Y:
+        position.y = UNDERGROUND_Y
+        velocity.y = 0.0
+        can_jump   = true
+
+func _input(event: InputEvent) -> void:
+    if is_dead:
+        return
+
+    # ── JUMP ───────────────────────────────────────────
+    if event.is_action_pressed("jump") and can_jump:
+        if zone == "surface":
+            velocity.y = JUMP_FORCE          # Jump upward
+        else:
+            velocity.y = -JUMP_FORCE         # Jump downward (toward center)
+        can_jump = false
+
+    # ── SWITCH ZONE ────────────────────────────────────
+    if event.is_action_pressed("switch_zone"):
+        _switch_zone()
+
+func _switch_zone() -> void:
+    if zone == "surface":
+        zone       = "underground"
+        position   = Vector2(FIXED_X, UNDERGROUND_Y)
+        velocity.y = 0.0
+        can_jump   = true
+        # Flip sprite upside-down in underground
+        character.flip_v = true
+    else:
+        zone       = "surface"
+        position   = Vector2(FIXED_X, SURFACE_Y)
+        velocity.y = 0.0
+        can_jump   = true
+        # Restore sprite
+        character.flip_v = false
+
+    # Tell Main to reset the zone timer
+    var main = get_parent()
+    if main and main.has_method("on_zone_switched"):
+        main.on_zone_switched()
+
+func die() -> void:
+    if is_dead:
+        return
+    is_dead    = true
+    velocity   = Vector2.ZERO
+    var main = get_parent()
+    if main and main.has_method("on_player_died"):
+        main.on_player_died()
+
+func reset() -> void:
+    is_dead          = false
+    zone             = "surface"
+    position         = Vector2(FIXED_X, SURFACE_Y)
+    velocity         = Vector2.ZERO
+    can_jump         = true
+    character.flip_v = false
+    character.play("idle")
