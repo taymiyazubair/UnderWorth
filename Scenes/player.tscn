@@ -15,116 +15,118 @@
 
 [sub_resource type="GDScript" id="GDScript_ivps1"]
 script/source = "extends CharacterBody2D
-# ════════════════════════════════════════════
-#  Player.gd  —  Fixed position, world scrolls
-# ════════════════════════════════════════════
+# Player.gd
+# Player is always fixed at X=200.
+# Surface zone:     gravity DOWN, stands at Y=516
+# Underground zone: gravity UP,   stands at Y=132, sprite flipped
 
-const GRAVITY        : float = 900.0
-const JUMP_FORCE     : float = -460.0
-const MAX_JUMPS      : int   = 2
-const FIXED_X        : float = 200.0   # Player stays locked here forever
+# ── Fixed positions ────────────────────────────────────
+const FIXED_X           : float = 200.0
+const SURFACE_Y     : float = 132.0   # TOP half — surface
+const UNDERGROUND_Y : float = 516.0   # BOTTOM half — underground
 
-var jumps_left    : int    = MAX_JUMPS
-var is_dead       : bool   = false
-var current_layer : String = \"surface\"   # \"surface\" or \"beneath\"
-var corruption    : float  = 0.0
-const CORRUPTION_RATE : float = 1.0 / 7.0
+# ── Physics ────────────────────────────────────────────
+const GRAVITY_STRENGTH  : float = 1000.0
+const JUMP_FORCE        : float = -500.0   # negative = upward in surface
+const MAX_FALL_SPEED    : float = 900.0
 
-@onready var sprite : AnimatedSprite2D = $Character
+# ── State ──────────────────────────────────────────────
+var zone        : String = \"surface\"   # \"surface\" or \"underground\"
+var is_dead     : bool   = false
+var can_jump    : bool   = true        # True when touching floor/ceiling
+
+@onready var character : AnimatedSprite2D = $Character
 
 func _ready() -> void:
 	add_to_group(\"player\")
-	position = Vector2(FIXED_X, 390)
-	sprite.play(\"idle\")
+	position = Vector2(FIXED_X, SURFACE_Y)  # ← starts at 132, top half
+	character.play(\"idle\")
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
-	# ── Lock player to fixed X — world scrolls, not the player ──
+	# ── Lock player to fixed X always ──────────────────
 	position.x = FIXED_X
 
-	# ── Gravity direction depends on layer ──
-	if current_layer == \"surface\":
-		velocity.y += GRAVITY * delta
-		velocity.y = min(velocity.y, 800.0)   # Cap fall speed
+	# ── Apply gravity toward the floor of current zone ─
+	if zone == \"surface\":
+		velocity.y += GRAVITY_STRENGTH * delta
+		velocity.y  = min(velocity.y, MAX_FALL_SPEED)
 	else:
-		velocity.y -= GRAVITY * delta
-		velocity.y = max(velocity.y, -800.0)  # Cap rise speed
+		velocity.y -= GRAVITY_STRENGTH * delta
+		velocity.y  = max(velocity.y, -MAX_FALL_SPEED)
 
 	velocity.x = 0.0
 	move_and_slide()
 
-	# ── Reset jumps when touching floor or ceiling ──
-	if current_layer == \"surface\" and is_on_floor():
-		jumps_left = MAX_JUMPS
-	if current_layer == \"beneath\" and is_on_ceiling():
-		jumps_left = MAX_JUMPS
-
-	# ── Hard boundary fallback (if no collision shape) ──
-	if current_layer == \"surface\" and position.y > 490:
-		position.y = 490
+	# ── Snap to floor/ceiling with small tolerance ──────
+	if zone == \"surface\" and position.y >= SURFACE_Y:
+		position.y = SURFACE_Y
 		velocity.y = 0.0
-		jumps_left = MAX_JUMPS
-	elif current_layer == \"beneath\" and position.y < 110:
-		position.y = 110
+		can_jump   = true
+	elif zone == \"underground\" and position.y <= UNDERGROUND_Y:
+		position.y = UNDERGROUND_Y
 		velocity.y = 0.0
-		jumps_left = MAX_JUMPS
-
-	# ── Corruption timer ──
-	corruption += CORRUPTION_RATE * delta
-	_update_corruption_ui()
-	if corruption >= 1.0:
-		die()
+		can_jump   = true
 
 func _input(event: InputEvent) -> void:
 	if is_dead:
 		return
 
-	# ── JUMP (Space or Up Arrow) ──
-	if event.is_action_pressed(\"jump\"):
-		if jumps_left > 0:
-			velocity.y = JUMP_FORCE if current_layer == \"surface\" else -JUMP_FORCE
-			jumps_left -= 1
+	# ── JUMP ───────────────────────────────────────────
+	if event.is_action_pressed(\"jump\") and can_jump:
+		if zone == \"surface\":
+			velocity.y = JUMP_FORCE          # Jump upward
+		else:
+			velocity.y = -JUMP_FORCE         # Jump downward (toward center)
+		can_jump = false
 
-	# ── LAYER SHIFT (S key) ──
-	if event.is_action_pressed(\"shift_layer\"):
-		_switch_layer()
+	# ── SWITCH ZONE ────────────────────────────────────
+	if event.is_action_pressed(\"switch_zone\"):
+		_switch_zone()
 
-func _switch_layer() -> void:
-	current_layer = \"beneath\" if current_layer == \"surface\" else \"surface\"
-	corruption    = 0.0       # Switching resets corruption
-	velocity.y    = 0.0
-	jumps_left    = MAX_JUMPS
-	var level = get_parent()
-	if level and level.has_method(\"switch_layer\"):
-		level.switch_layer(current_layer)
+func _switch_zone() -> void:
+	if zone == \"surface\":
+		zone       = \"underground\"
+		position   = Vector2(FIXED_X, UNDERGROUND_Y)
+		velocity.y = 0.0
+		can_jump   = true
+		# Flip sprite upside-down in underground
+		character.flip_v = true
+	else:
+		zone       = \"surface\"
+		position   = Vector2(FIXED_X, SURFACE_Y)
+		velocity.y = 0.0
+		can_jump   = true
+		# Restore sprite
+		character.flip_v = false
 
-func _update_corruption_ui() -> void:
-	var level = get_parent()
-	if level and level.has_method(\"update_corruption\"):
-		level.update_corruption(corruption, current_layer)
+	# Tell Main to reset the zone timer
+	var main = get_parent()
+	if main and main.has_method(\"on_zone_switched\"):
+		main.on_zone_switched()
 
 func die() -> void:
 	if is_dead:
 		return
-	is_dead = true
-	velocity = Vector2.ZERO
-	var level = get_parent()
-	if level and level.has_method(\"show_game_over\"):
-		level.show_game_over()
+	is_dead    = true
+	velocity   = Vector2.ZERO
+	var main = get_parent()
+	if main and main.has_method(\"on_player_died\"):
+		main.on_player_died()
 
 func reset() -> void:
-	is_dead       = false
-	current_layer = \"surface\"
-	corruption    = 0.0
-	velocity      = Vector2.ZERO
-	position      = Vector2(FIXED_X, 390)
-	jumps_left    = MAX_JUMPS
-	sprite.play(\"idle\")
+	is_dead          = false
+	zone             = \"surface\"
+	position         = Vector2(FIXED_X, SURFACE_Y)
+	velocity         = Vector2.ZERO
+	can_jump         = true
+	character.flip_v = false
+	character.play(\"idle\")
 "
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_gt76g"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_pu2lt"]
 animations = [{
 "frames": [{
 "duration": 1.0,
@@ -164,23 +166,25 @@ animations = [{
 "texture": ExtResource("12_bi64h")
 }],
 "loop": true,
-"name": &"default",
+"name": &"idle",
 "speed": 12.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_pu2lt"]
-radius = 72.249565
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_ukyrk"]
+radius = 0.71892965
+height = 1.4378593
 
 [node name="Player" type="CharacterBody2D" unique_id=1294129050 groups=["Player"]]
 script = SubResource("GDScript_ivps1")
 
 [node name="Character" type="AnimatedSprite2D" parent="." unique_id=943872231]
-position = Vector2(116.99999, 436.00006)
-scale = Vector2(0.569, 0.394)
-sprite_frames = SubResource("SpriteFrames_gt76g")
-autoplay = "default"
-frame_progress = 0.89479244
+position = Vector2(2, 7)
+scale = Vector2(0.3076923, 0.26666668)
+sprite_frames = SubResource("SpriteFrames_pu2lt")
+animation = &"idle"
+autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=15674143]
-position = Vector2(112, 425)
-shape = SubResource("CircleShape2D_pu2lt")
+position = Vector2(-0.05998993, -0.26006317)
+scale = Vector2(56, 56)
+shape = SubResource("CapsuleShape2D_ukyrk")

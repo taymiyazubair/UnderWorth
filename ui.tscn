@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://dmnobkkhuts3u"]
+
+[node name="UI" type="CanvasLayer" unique_id=416182996]
+
+[node name="ZoneTimerBar" type="ProgressBar" parent="." unique_id=803966997]
+offset_left = 426.0
+offset_top = 10.0
+offset_right = 726.0
+offset_bottom = 37.0
+max_value = 10.0
+value = 10.0
+
+[node name="ScoreLabel" type="Label" parent="." unique_id=1488980077]
+offset_left = 20.0
+offset_top = 14.0
+offset_right = 66.0
+offset_bottom = 37.0
+theme_override_font_sizes/font_size = 28
+text = "\"💎0\""
+
+[node name="ZoneLabel" type="Label" parent="." unique_id=987591995]
+offset_left = 490.0
+offset_top = 40.0
+offset_right = 563.0
+offset_bottom = 63.0
+theme_override_font_sizes/font_size = 20
+text = "\"Surface\""
+
+[node name="GameOverPanel" type="Panel" parent="." unique_id=257797775]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Container" type="VBoxContainer" parent="GameOverPanel" unique_id=1503601042]
+custom_minimum_size = Vector2(400, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="GameOverLabel" type="Label" parent="GameOverPanel/Container" unique_id=1415368933]
+modulate = Color(0.97849756, 4.042983e-06, 1.1551381e-06, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 72
+text = "\"GAME OVER\""
+horizontal_alignment = 1
+
+[node name="ScoreDisplay" type="Label" parent="GameOverPanel/Container" unique_id=1915638416]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "\"Score: 0\"
+"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="GameOverPanel/Container" unique_id=248922777]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "\"PLAY AGAIN\" "

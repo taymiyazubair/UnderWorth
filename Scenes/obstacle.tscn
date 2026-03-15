@@ -1,12 +1,19 @@
 [gd_scene format=3 uid="uid://c2qcyswrjeu6a"]
 
+[ext_resource type="Script" uid="uid://sisuwvmhyihp" path="res://Scenes/Obstacle.gd" id="1_15o2q"]
+[ext_resource type="Texture2D" uid="uid://de8uhpwcb0p2a" path="res://Assets/Sprites/Obstacles/obstacles/Platformer/Wooden_Barrel.png" id="2_2p81s"]
+
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_f8t61"]
-size = Vector2(66, 49)
+size = Vector2(3.25, 3.139509)
 
 [node name="Obstacle" type="Area2D" unique_id=1704919319]
+collision_layer = 2
+script = ExtResource("1_15o2q")
 
 [node name="Sprite" type="Sprite2D" parent="." unique_id=1659979818]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_2p81s")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=547012561]
-position = Vector2(23, 14.5)
+scale = Vector2(20, 20)
 shape = SubResource("RectangleShape2D_f8t61")
