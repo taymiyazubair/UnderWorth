@@ -1,0 +1,96 @@
+extends Node2D
+# ObstacleSpawner.gd
+# Spawns obstacle tiles that scroll from right to left
+# Creates obstacles in both surface zone and underground zone
+
+@export var obstacle_scene : PackedScene  # Assign Obstacle.tscn in Inspector
+@export var tile_textures  : Array[Texture2D] = []  # Assign your tile images in Inspector
+
+# ── Speed ─────────────────────────────────────────────
+var scroll_speed    : float = 280.0
+var difficulty      : float = 0.0
+var running         : bool  = false
+
+# ── Spawn timing ──────────────────────────────────────
+var spawn_timer     : float = 0.0
+var spawn_interval  : float = 2.0   # Seconds between spawns
+
+# ── Zone Y positions ──────────────────────────────────
+const SURFACE_Y     : float = 516.0   # Where surface obstacles sit
+const UNDERGROUND_Y : float = 132.0   # Where underground obstacles sit
+const SPAWN_X       : float = 1250.0  # Off-screen right edge
+
+func start() -> void:
+    running = true
+
+func stop() -> void:
+    running = false
+
+func restart() -> void:
+    # Remove all current obstacles
+    for child in get_children():
+        child.queue_free()
+    scroll_speed   = 280.0
+    difficulty     = 0.0
+    spawn_timer    = 0.0
+    spawn_interval = 2.0
+    running        = true
+
+func _process(delta: float) -> void:
+    if not running:
+        return
+
+    # Increase difficulty over time
+    difficulty   += delta
+    scroll_speed  = 280.0 + difficulty * 8.0
+
+    # Spawn timer
+    spawn_timer  += delta
+    if spawn_timer >= spawn_interval:
+        spawn_timer     = 0.0
+        spawn_interval  = max(0.7, spawn_interval - 0.03)
+        _spawn_wave()
+
+func _spawn_wave() -> void:
+    # Randomly choose what to spawn
+    var roll := randi() % 5
+    match roll:
+        0: _spawn_obstacle(SURFACE_Y, "surface")                    # Surface only
+        1: _spawn_obstacle(UNDERGROUND_Y, "underground")            # Underground only
+        2:                                                           # Both at once
+            _spawn_obstacle(SURFACE_Y, "surface")
+            _spawn_obstacle(UNDERGROUND_Y, "underground")
+        3: _spawn_obstacle_group(SURFACE_Y, "surface", 2)          # 2 surface in a row
+        4: _spawn_obstacle_group(UNDERGROUND_Y, "underground", 2)  # 2 underground in a row
+
+func _spawn_obstacle(y_pos: float, zone: String) -> void:
+    if obstacle_scene == null:
+        push_error("ObstacleSpawner: Assign Obstacle.tscn in the Inspector!")
+        return
+
+    var obs = obstacle_scene.instantiate()
+    obs.position = Vector2(SPAWN_X, y_pos)
+    obs.set_speed(scroll_speed)
+
+    # Assign a random tile texture if you have them set up
+    if tile_textures.size() > 0:
+        var tex = tile_textures[randi() % tile_textures.size()]
+        obs.set_tile_texture(tex)
+
+    # Tag with zone so player collision check knows which zone this belongs to
+    obs.set_meta("zone", zone)
+
+    add_child(obs)
+
+func _spawn_obstacle_group(y_pos: float, zone: String, count: int) -> void:
+    for i in range(count):
+        var x_offset := SPAWN_X + i * 120.0
+        if obstacle_scene == null:
+            return
+        var obs = obstacle_scene.instantiate()
+        obs.position = Vector2(x_offset, y_pos)
+        obs.set_speed(scroll_speed)
+        if tile_textures.size() > 0:
+            obs.set_tile_texture(tile_textures[randi() % tile_textures.size()])
+        obs.set_meta("zone", zone)
+        add_child(obs)
